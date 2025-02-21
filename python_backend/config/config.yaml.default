@@ -1,0 +1,105 @@
+app:
+  debug: true
+  host: "127.0.0.1"
+  port: 9000
+  tmp_dir: "tmp"
+
+
+logging:
+  level: "DEBUG"
+  colors:
+    DEBUG: "cyan"
+    INFO: "green"
+    WARNING: "yellow"
+    ERROR: "red"
+    CRITICAL: "red,bg_white"
+  ignored_loggers:
+    websockets: "WARNING"
+    openai: "DEBUG"
+    uvicorn: "INFO"
+    uvicorn.access: "INFO"
+    PIL: "INFO"
+    httpcore: "INFO"
+    engineio.server: "WARNING"
+    socketio.server: "WARNING"
+
+llm:
+  support_json_mode: false
+  #model: chagpt: chatgpt-4o-latest gpt-4o-mini;  qwen: qwen-plus-latest qwen-plus-0919; qwen_local: Qwen/Qwen2.5-7B-Instruct  Qwen/Qwen2.5-14B-Instruct-AWQ
+  model: "Qwen/Qwen2.5-14B-Instruct-AWQ"
+  openai_custom_key_envname: "DASHSCOPE_API_KEY"  #"OPENAI_API_KEY", "DASHSCOPE_API_KEY"
+  openai_custom_key_envname_mm: "DASHSCOPE_API_KEY"  #"OPENAI_API_KEY", "DASHSCOPE_API_KEY"
+  # "https://api.openai.com/v1" "https://dashscope.aliyuncs.com/compatible-mode/v1" 
+  openai_custom_url: ""
+  openai_custom_mm_url: ""
+  # qwen-vl-plus-0809 qwen-vl-max-0809 Qwen/Qwen2-VL-2B-Instruct-AWQ Qwen/Qwen2-VL-7B-Instruct-AWQ
+  openai_custom_mm_model: "Qwen/Qwen2-VL-2B-Instruct-AWQ"
+  location: "上海松江"
+
+# 音频配置
+audio:
+  sample_rate: 16000
+  channels: 1
+  sentence_split:
+    enable: true # 是否启用句子拆分
+    min_duration_for_split: 3.0 # 需要拆分的最小音频时长(秒)
+  
+  # VAD模型配置
+  vad_model:
+    use_onnx: true
+    exp_filter_alpha: 0.8
+    log_vad_prob: false
+    enable_quick: false
+    enable_quick_timeout: false
+    quick:
+      min_speech_duration: 0.2
+      min_silence_duration: 0.3
+      activation_threshold: 0.5
+      force_trigger: 2.5        # 2.5秒强制触发
+    
+    long:
+      min_speech_duration: 0.5
+      min_silence_duration: 0.8
+      min_silence_duration_short: 0.2
+      adaptive_threshold: 10.0
+      activation_threshold: 0.5
+      force_trigger: 20.0       # 20秒强制触发
+  
+  # ASR配置
+  asr:
+    model: "iic/SenseVoiceSmall"
+    language: "zh"
+    use_onnx: true
+    output_timestamp: true
+  
+  # 说话人识别配置
+  speaker:
+    model:
+      use_campplus: true
+      device: "cpu"
+    embedding:
+      min_chunk_duration: 3.0
+      max_chunk_duration: 20.0
+      max_embeddings: 3
+    threshold:
+      base: 0.25
+      duration_factor: 0.25  # 短音频阈值增加的最大比例
+    storage:
+      path: "data/speakers.json"
+
+# 缓冲区配置
+buffer:
+  long_buffer_duration: 300.0   # 总缓冲时长(5分钟)
+  cleanup_interval: 30.0        # 清理间隔(秒)
+  max_frames: 30000            # 最大帧数(约5分钟)
+  sample_rate: 16000
+
+# VAD管理配置
+vad_manager:
+  max_search_distance: 2.0      # 查找切分点的最大距离（秒）
+  cleanup_interval: 60.0        # 清理过期片段的间隔（秒）
+
+# 事件配置
+events:
+  max_queue_size: 1000  # 事件队列最大长度
+	

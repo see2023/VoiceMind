@@ -1,0 +1,37 @@
+data/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+
+# macOS
+.DS_Store
+
+# Project specific
+*.log
+/data/*
+!data/.gitkeep
+
+# Don't ignore these specific files
+!data/background.txt
+!data/mails.txt
+!data/xiaohongshu.txt
+
+# Python environment
+/assets/python_env/

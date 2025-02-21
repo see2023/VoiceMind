@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Meeting Assistant WebSocket Test</title>
+    <script src="./socket.io.min.js"></script>
+    <style>
+        body {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        h2 {
+            margin: 0 0 10px 0;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #f5f5f5;
+        }
+        .message.system { background-color: #fff3e0; }
+        .message.error { background-color: #ffebee; }
+        .message.transcription { background-color: #e8f5e9; }
+        .message.analysis { background-color: #e3f2fd; }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #1976d2; }
+        button.recording { background-color: #f44336; }
+        
+        .timestamp {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        select, input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Meeting Assistant Test Client</h1>
+    
+    <div class="container">
+        <!-- 音频面板 -->
+        <div class="panel">
+            <h2>Audio Stream</h2>
+            <div class="messages" id="audioMessages"></div>
+            <div class="controls">
+                <button id="recordButton">Start Recording</button>
+                <select id="audioSource">
+                    <option value="">选择麦克风...</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- 分析面板 -->
+        <div class="panel">
+            <h2>Analysis</h2>
+            <div class="messages" id="analysisMessages"></div>
+            <div class="controls">
+                <select id="analysisType">
+                    <option value="stance">立场分析</option>
+                    <option value="summary">总结</option>
+                    <option value="suggestion">建议</option>
+                </select>
+                <input type="text" id="analysisContent" placeholder="输入要分析的内容">
+                <button onclick="sendAnalysis()">发送分析请求</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:9000', {
+            path: '/ws/socket.io',
+            transports: ['websocket', 'polling']
+        });
+
+        // 添加事件监听器，监控所有事件
+        socket.onAny((eventName, ...args) => {
+            console.log(`Debug - Event: ${eventName}`, args);
+        });
+
+        let mediaRecorder;
+        let audioContext;
+        let recording = false;
+        let lastLogTime = 0;
+        let streamingStatus = false;  // 只保留流状态跟踪
+        
+        // 工具函数
+        function getTimestamp() {
+            return new Date().toLocaleTimeString();
+        }
+
+        function addMessage(containerId, text, type = 'system') {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = getTimestamp();
+            
+            const content = document.createElement('div');
+            content.textContent = text;
+            
+            div.appendChild(timestamp);
+            div.appendChild(content);
+            
+            const container = document.getElementById(containerId);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Socket.IO 事件处理
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            addMessage('audioMessages', '已连接到服务器');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            addMessage('audioMessages', '与服务器断开连接');
+        });
+
+        socket.on('system_status', (status) => {
+            addMessage('audioMessages', `系统状态: ${JSON.stringify(status)}`);
+        });
+
+        socket.on('transcription', (data) => {
+            // 添加更详细的日志
+            console.log('Received transcription event at:', new Date().toISOString());
+            console.log('Raw transcription data:', data);
+            
+            try {
+                const timestamp = data.timestamp;
+                let timestamp_info = '';
+                if (timestamp) {
+                    const totalCount = timestamp.length;
+                    const lastTimestamp = timestamp[timestamp.length - 1];
+                    delete data.timestamp;
+                    timestamp_info = `word count: ${totalCount}, last timestamp: ${lastTimestamp}`;
+                }
+                
+                addMessage('audioMessages', `转写结果: ${JSON.stringify(data)} ${timestamp_info}`, 'transcription');
+            } catch (error) {
+                console.error('Error processing transcription:', error);
+                addMessage('audioMessages', `处理转写结果出错: ${error.message}`, 'error');
+            }
+        });
+
+        socket.on('analysis_result', (data) => {
+            addMessage('analysisMessages', `分析结果: ${JSON.stringify(data)}`, 'analysis');
+        });
+
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            addMessage('audioMessages', `错误: ${JSON.stringify(error)}`, 'error');
+        });
+
+        // 添加重连事件监听
+        socket.on('reconnect_attempt', (attemptNumber) => {
+            console.log('Attempting to reconnect:', attemptNumber);
+        });
+
+        socket.on('reconnect', (attemptNumber) => {
+            console.log('Reconnected after', attemptNumber, 'attempts');
+        });
+
+        // 音频处理
+        async function initAudio() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const audioInputs = devices.filter(device => device.kind === 'audioinput');
+                const select = document.getElementById('audioSource');
+                
+                audioInputs.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `麦克风 ${select.length + 1}`;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('获取设备列表失败:', e);
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const deviceId = document.getElementById('audioSource').value;
+                let stream;
+                
+                try {
+                    // 首先尝试使用首选参数
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            deviceId: deviceId ? {exact: deviceId} : undefined,
+                            channelCount: 1,
+                            sampleRate: 16000
+                        }
+                    });
+                } catch (e) {
+                    if (e.name === 'OverconstrainedError') {
+                        console.warn('首选音频参数不支持，使用默认参数');
+                        // 回退到默认参数
+                        stream = await navigator.mediaDevices.getUserMedia({
+                            audio: deviceId ? {deviceId: {exact: deviceId}} : true
+                        });
+                    } else {
+                        throw e;  // 其他错误继续抛出
+                    }
+                }
+                
+                audioContext = new AudioContext({sampleRate: 16000});
+                const source = audioContext.createMediaStreamSource(stream);
+                await audioContext.audioWorklet.addModule('audio-processor.js');
+                const processor = new AudioWorkletNode(audioContext, 'audio-processor');
+                
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+                
+                processor.port.onmessage = (e) => {
+                    const audioData = e.data;
+                    const pcmData = new Int16Array(audioData.map(x => Math.max(-1, Math.min(1, x)) * 32767));
+                    
+                    socket.emit('audio_stream', {
+                        audio: pcmData.buffer,
+                        timestamp: Date.now() / 1000
+                    });
+                    
+                    // 只在状态变化时打印日志
+                    if (!streamingStatus) {
+                        console.log('Audio streaming started');
+                        streamingStatus = true;
+                    }
+                };
+                
+                recording = true;
+                document.getElementById('recordButton').textContent = 'Stop Recording';
+                document.getElementById('recordButton').classList.add('recording');
+				addMessage('audioMessages', '录音已开始');
+                
+            } catch (e) {
+                console.error('录音失败:', e);
+                addMessage('audioMessages', `录音失败: ${e.message}`, 'error');
+            }
+        }
+
+        function stopRecording() {
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            recording = false;
+            if (streamingStatus) {
+                console.log('Audio streaming stopped');
+                socket.emit('audio_stream_stop');  // 发送停止事件
+                streamingStatus = false;
+            }
+            
+            addMessage('audioMessages', '录音已停止');
+            
+            document.getElementById('recordButton').textContent = 'Start Recording';
+            document.getElementById('recordButton').classList.remove('recording');
+        }
+
+        document.getElementById('recordButton').onclick = () => {
+            if (!recording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        };
+
+        // 分析请求
+        function sendAnalysis() {
+            const type = document.getElementById('analysisType').value;
+            const content = document.getElementById('analysisContent').value;
+            
+            if (!content) {
+                addMessage('analysisMessages', '请输入要分析的内容', 'error');
+                return;
+            }
+            
+            socket.emit('analysis_request', {
+                type: type,
+                content: {
+                    text: content,
+                    context: {
+                        speakers: ['speaker1', 'speaker2'],
+                        topics: ['topic1', 'topic2']
+                    }
+                }
+            });
+            
+            addMessage('analysisMessages', `发送分析请求: ${type} - ${content}`);
+        }
+
+        // 初始化
+        initAudio();
+    </script>
+</body>
+</html> 
