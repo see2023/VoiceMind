@@ -2,6 +2,8 @@
 
 一个专注于多场景应用的智能语音助手，能够实时记录对话内容、识别发言人、分析观点并提供即时建议。
 
+[Demo](https://www.bilibili.com/video/BV1eRPAeqEhA/?vd_source=404c3b2266008e965fbdc06a4f0b001e)
+
 ## 核心功能
 
 - [x] 实时语音转文字
