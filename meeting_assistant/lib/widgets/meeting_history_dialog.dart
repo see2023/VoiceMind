@@ -2,35 +2,195 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/meeting_controller.dart';
 import 'meeting_info_dialog.dart';
+import 'package:flutter/services.dart';
 
-class MeetingHistoryDialog extends StatelessWidget {
+class MeetingHistoryDialog extends StatefulWidget {
   const MeetingHistoryDialog({super.key});
+
+  @override
+  State<MeetingHistoryDialog> createState() => _MeetingHistoryDialogState();
+}
+
+class _MeetingHistoryDialogState extends State<MeetingHistoryDialog> {
+  // Method to handle audio export
+  void _handleAudioExport(int meetingId) {
+    // Using unawaited Future to avoid BuildContext warnings
+    _exportAudio(meetingId);
+  }
+
+  // Async implementation without BuildContext
+  Future<void> _exportAudio(int meetingId) async {
+    final result =
+        await Get.find<MeetingController>().exportMeetingAudio(meetingId);
+    if (result != null && mounted) {
+      _showExportSnackBar(result);
+    }
+  }
+
+  // Helper method to show export snackbar
+  void _showExportSnackBar(String filePath, {bool isText = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            '${(isText ? 'text_exported' : 'audio_exported').tr}: $filePath'),
+        action: SnackBarAction(
+          label: 'open_folder'.tr,
+          onPressed: () =>
+              Get.find<MeetingController>().openExportFolder(filePath),
+        ),
+      ),
+    );
+  }
+
+  // Method to handle text export
+  void _handleTextExport(int meetingId) {
+    // Using unawaited Future to avoid BuildContext warnings
+    _exportText(meetingId);
+  }
+
+  // Async implementation without BuildContext
+  Future<void> _exportText(int meetingId) async {
+    final result =
+        await Get.find<MeetingController>().exportMeetingText(meetingId);
+    if (result != null && mounted) {
+      _showTextPreviewDialog(result.text, result.title);
+    }
+  }
+
+  // Show text preview dialog
+  void _showTextPreviewDialog(String text, String title) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('text_export_preview'.tr),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400, // Increased height
+          child: SingleChildScrollView(
+            child: SelectableText(text),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: text));
+              ScaffoldMessenger.of(dialogContext).showSnackBar(
+                SnackBar(content: Text('copied_to_clipboard'.tr)),
+              );
+            },
+            child: Text('copy'.tr),
+          ),
+          TextButton(
+            onPressed: () {
+              // Non-async callback that triggers async function
+              _handleSaveText(dialogContext, text, title);
+            },
+            child: Text('save'.tr),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text('close'.tr),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Handle save text button press
+  void _handleSaveText(BuildContext dialogContext, String text, String title) {
+    // Using unawaited Future to avoid BuildContext warnings
+    _saveTextToFile(dialogContext, text, title);
+  }
+
+  // Async implementation of text saving
+  Future<void> _saveTextToFile(
+      BuildContext dialogContext, String text, String title) async {
+    final filePath =
+        await Get.find<MeetingController>().saveTextToFile(text, title);
+    if (filePath != null) {
+      // ignore: use_build_context_synchronously
+      Navigator.of(dialogContext).pop();
+      if (mounted) {
+        _showExportSnackBar(filePath, isText: true);
+      }
+    }
+  }
+
+  // Method to handle clearing meeting data
+  void _handleClearData(int meetingId) {
+    // Using unawaited Future to avoid BuildContext warnings
+    _clearData(meetingId);
+  }
+
+  // Async implementation without BuildContext
+  Future<void> _clearData(int meetingId) async {
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text('clear_data'.tr),
+            content: Text('clear_data_confirm'.tr),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text('cancel'.tr),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text('confirm'.tr),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (confirm && mounted) {
+      await Get.find<MeetingController>().clearMeetingData(meetingId);
+    }
+  }
+
+  // Method to handle deleting meeting
+  void _handleDeleteMeeting(int meetingId) {
+    // Using unawaited Future to avoid BuildContext warnings
+    _deleteMeeting(meetingId);
+  }
+
+  // Async implementation without BuildContext
+  Future<void> _deleteMeeting(int meetingId) async {
+    if (!mounted) return;
+
+    final confirm = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text('delete_meeting'.tr),
+            content: Text('delete_meeting_confirm'.tr),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text('cancel'.tr),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text('confirm'.tr),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (confirm && mounted) {
+      await Get.find<MeetingController>().deleteMeeting(meetingId);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<MeetingController>();
-
-    // 确认对话框
-    Future<bool> showConfirmDialog(String title, String content) async {
-      return await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(title),
-              content: Text(content),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: Text('cancel'.tr),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: Text('confirm'.tr),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-    }
 
     return AlertDialog(
       title: Text('meeting_history'.tr),
@@ -43,11 +203,15 @@ class MeetingHistoryDialog extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.add_circle_outline),
               title: Text('new_meeting'.tr),
-              onTap: () async {
-                Navigator.of(context).pop();
+              onTap: () {
+                // Store context before any async operation
+                final currentContext = context;
+                // Close the current dialog
+                Navigator.of(currentContext).pop();
+                // Show the new meeting dialog
                 showDialog(
-                  context: context,
-                  builder: (context) => MeetingInfoDialog(
+                  context: currentContext,
+                  builder: (dialogContext) => MeetingInfoDialog(
                     onSave: (title, objective, notes) async {
                       await controller.createNewMeeting(
                           title, objective, notes);
@@ -93,26 +257,32 @@ class MeetingHistoryDialog extends StatelessWidget {
                           ),
                           PopupMenuButton<String>(
                             icon: const Icon(Icons.more_vert),
-                            onSelected: (value) async {
-                              if (value == 'clear') {
-                                final confirm = await showConfirmDialog(
-                                  'clear_data'.tr,
-                                  'clear_data_confirm'.tr,
-                                );
-                                if (confirm) {
-                                  await controller.clearMeetingData(meeting.id);
-                                }
+                            onSelected: (value) {
+                              if (value == 'export_audio') {
+                                _handleAudioExport(meeting.id);
+                              } else if (value == 'export_text') {
+                                _handleTextExport(meeting.id);
+                              } else if (value == 'clear') {
+                                _handleClearData(meeting.id);
                               } else if (value == 'delete') {
-                                final confirm = await showConfirmDialog(
-                                  'delete_meeting'.tr,
-                                  'delete_meeting_confirm'.tr,
-                                );
-                                if (confirm) {
-                                  await controller.deleteMeeting(meeting.id);
-                                }
+                                _handleDeleteMeeting(meeting.id);
                               }
                             },
                             itemBuilder: (context) => [
+                              PopupMenuItem(
+                                value: 'export_audio',
+                                child: ListTile(
+                                  leading: const Icon(Icons.audio_file),
+                                  title: Text('export_audio'.tr),
+                                ),
+                              ),
+                              PopupMenuItem(
+                                value: 'export_text',
+                                child: ListTile(
+                                  leading: const Icon(Icons.description),
+                                  title: Text('export_text'.tr),
+                                ),
+                              ),
                               PopupMenuItem(
                                 value: 'clear',
                                 child: ListTile(
@@ -133,8 +303,12 @@ class MeetingHistoryDialog extends StatelessWidget {
                       ),
                       selected: isActive,
                       onTap: () {
+                        // Store context before any operations
+                        final currentContext = context;
+                        // Switch to selected meeting
                         controller.switchMeeting(meeting);
-                        Navigator.of(context).pop();
+                        // Close the dialog
+                        Navigator.of(currentContext).pop();
                       },
                     );
                   },
@@ -146,7 +320,24 @@ class MeetingHistoryDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            Get.find<MeetingController>().openExportBaseFolder();
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.folder_open, size: 18),
+              const SizedBox(width: 4),
+              Text('open_storage_dir'.tr),
+            ],
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            // Store context before any operations
+            final currentContext = context;
+            Navigator.of(currentContext).pop();
+          },
           child: Text('close'.tr),
         ),
       ],

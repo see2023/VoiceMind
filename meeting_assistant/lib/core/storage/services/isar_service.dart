@@ -936,4 +936,41 @@ class IsarService {
       rethrow;
     }
   }
+
+  // 获取指定会议
+  static Future<Meeting?> getMeetingById(int meetingId) async {
+    return await isar.meetings.get(meetingId);
+  }
+
+  // 获取会议的所有对话记录（不分页）
+  static Future<List<Utterance>> getAllUtterances(int meetingId) async {
+    try {
+      Log.log.info('Fetching all utterances for meeting $meetingId');
+      final utterances =
+          await isar.utterances.where().meetingIdEqualTo(meetingId).findAll();
+      Log.log.info('Found ${utterances.length} utterances');
+      return utterances;
+    } catch (e) {
+      Log.log.severe('Failed to get all utterances: $e');
+      return [];
+    }
+  }
+
+  // 获取会议的第一条发言记录（按时间排序）
+  static Future<Utterance?> getFirstUtterance(int meetingId) async {
+    return await isar.utterances
+        .where()
+        .meetingIdEqualTo(meetingId)
+        .sortByStartTime()
+        .findFirst();
+  }
+
+  // 获取会议的最后一条发言记录（按时间排序）
+  static Future<Utterance?> getLastUtterance(int meetingId) async {
+    return await isar.utterances
+        .where()
+        .meetingIdEqualTo(meetingId)
+        .sortByEndTimeDesc()
+        .findFirst();
+  }
 }

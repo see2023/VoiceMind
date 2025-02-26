@@ -150,10 +150,19 @@ class Messages extends Translations {
           // Meeting management
           'clear_data': 'Clear Data',
           'clear_data_confirm':
-              'Are you sure you want to clear all audio and conversation records for this meeting? This action cannot be undone.',
+              'Are you sure you want to clear all audio and conversation data for this meeting? This action cannot be undone.',
           'delete_meeting': 'Delete Meeting',
           'delete_meeting_confirm':
-              'Are you sure you want to delete this meeting? This will delete all related data and cannot be undone.',
+              'Are you sure you want to delete this meeting? This action will delete all related data and cannot be undone.',
+          'export_audio': 'Export Audio',
+          'audio_exported': 'Audio exported successfully',
+          'export_text': 'Export Text',
+          'text_exported': 'Text exported successfully',
+          'text_export_preview': 'Text Export Preview',
+          'copy': 'Copy',
+          'open_folder': 'Open Folder',
+          'copied_to_clipboard': 'Copied to clipboard',
+          'open_storage_dir': 'Open Storage Directory',
         },
         'zh_CN': {
           // 应用标题
@@ -303,6 +312,15 @@ class Messages extends Translations {
           'clear_data_confirm': '确定要清除该会议的所有音频和对话记录吗？此操作不可恢复。',
           'delete_meeting': '删除会议',
           'delete_meeting_confirm': '确定要删除该会议吗？此操作将删除所有相关数据且不可恢复。',
+          'export_audio': '导出音频',
+          'audio_exported': '音频导出成功',
+          'export_text': '导出文本',
+          'text_exported': '文本导出成功',
+          'text_export_preview': '文本导出预览',
+          'copy': '复制',
+          'open_folder': '打开文件夹',
+          'copied_to_clipboard': '已复制到剪贴板',
+          'open_storage_dir': '打开存储目录',
         },
       };
 }

@@ -25,6 +25,10 @@ dependencies:
   simple_logger: ^1.9.0
   get_storage: ^2.1.1
   http: ^1.2.2
+  share_plus: ^10.1.4
+  url_launcher: ^6.3.1
+  intl: ^0.20.2
+  window_manager: ^0.4.3
 
 dev_dependencies:
   flutter_test:

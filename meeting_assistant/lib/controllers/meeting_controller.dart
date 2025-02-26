@@ -10,6 +10,13 @@ import '../core/storage/services/isar_service.dart';
 import '../core/utils/logger.dart';
 import 'dart:async';
 import '../core/socket/meeting_service.dart';
+import 'dart:typed_data';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 class MeetingController extends GetxController {
   final Rx<Meeting?> _currentMeeting = Rx<Meeting?>(null);
@@ -713,4 +720,273 @@ class MeetingController extends GetxController {
       rethrow;
     }
   }
+
+  // 导出会议所有音频为WAV文件
+  Future<String?> exportMeetingAudio(int meetingId) async {
+    try {
+      Log.log.info('Exporting audio for meeting $meetingId');
+
+      // 查询此会议的所有音频数据
+      final meeting = await IsarService.getMeetingById(meetingId);
+      if (meeting == null) {
+        Log.log.warning('Meeting not found: $meetingId');
+        return null;
+      }
+
+      // 获取会议的所有音频数据
+      final firstUtterance = await IsarService.getFirstUtterance(meetingId);
+      final lastUtterance = await IsarService.getLastUtterance(meetingId);
+
+      if (firstUtterance == null || lastUtterance == null) {
+        Log.log.warning('No audio data found for meeting $meetingId');
+        return null;
+      }
+
+      final startTime = firstUtterance.startTime;
+      final endTime = lastUtterance.endTime;
+
+      // 获取所有音频块
+      final chunks =
+          await IsarService.getAudioChunks(meetingId, startTime, endTime);
+      if (chunks.isEmpty) {
+        Log.log.warning('No audio chunks found for meeting $meetingId');
+        return null;
+      }
+
+      // 创建WAV文件
+      final appDir = await getApplicationDocumentsDirectory();
+      final filePath = '${appDir.path}/meeting_${meetingId}_audio.wav';
+      final file = File(filePath);
+
+      // 计算总数据长度
+      final totalLength =
+          chunks.fold<int>(0, (sum, chunk) => sum + chunk.wavData.length);
+
+      // 创建WAV头
+      final wavHeader = _createWavHeader(totalLength);
+
+      // 创建完整WAV文件
+      final wavFile = Uint8List(wavHeader.length + totalLength);
+      wavFile.setAll(0, wavHeader);
+
+      // 填充音频数据
+      var offset = wavHeader.length;
+      for (var chunk in chunks) {
+        wavFile.setAll(offset, chunk.wavData);
+        offset += chunk.wavData.length;
+      }
+
+      // 写入文件
+      await file.writeAsBytes(wavFile);
+      Log.log.info('Audio file saved: $filePath');
+
+      // 分享文件
+      await Share.shareXFiles([XFile(filePath)],
+          text: 'Meeting Audio: ${meeting.title}');
+
+      return filePath;
+    } catch (e) {
+      Log.log.severe('Failed to export audio: $e');
+      return null;
+    }
+  }
+
+  // 创建WAV头部数据
+  Uint8List _createWavHeader(
+    int dataSize, {
+    int sampleRate = 16000,
+    int channels = 1,
+    int bitsPerSample = 16,
+  }) {
+    final header = ByteData(44); // WAV header is 44 bytes
+
+    // RIFF chunk descriptor
+    header.setUint32(0, 0x52494646, Endian.big); // 'RIFF' in ASCII
+    header.setUint32(4, 36 + dataSize, Endian.little); // File size - 8
+    header.setUint32(8, 0x57415645, Endian.big); // 'WAVE' in ASCII
+
+    // fmt sub-chunk
+    header.setUint32(12, 0x666D7420, Endian.big); // 'fmt ' in ASCII
+    header.setUint32(16, 16, Endian.little); // Subchunk1Size (16 for PCM)
+    header.setUint16(20, 1, Endian.little); // AudioFormat (1 for PCM)
+    header.setUint16(22, channels, Endian.little); // NumChannels
+    header.setUint32(24, sampleRate, Endian.little); // SampleRate
+    header.setUint32(28, sampleRate * channels * bitsPerSample ~/ 8,
+        Endian.little); // ByteRate
+    header.setUint16(
+        32, channels * bitsPerSample ~/ 8, Endian.little); // BlockAlign
+    header.setUint16(34, bitsPerSample, Endian.little); // BitsPerSample
+
+    // data sub-chunk
+    header.setUint32(36, 0x64617461, Endian.big); // 'data' in ASCII
+    header.setUint32(40, dataSize, Endian.little); // Subchunk2Size
+
+    return header.buffer.asUint8List();
+  }
+
+  // 导出会议文本数据
+  Future<ExportResult?> exportMeetingText(int meetingId) async {
+    try {
+      Log.log.info('Exporting text for meeting $meetingId');
+
+      // 查询此会议的所有对话记录
+      final meeting = await IsarService.getMeetingById(meetingId);
+      if (meeting == null) {
+        Log.log.warning('Meeting not found: $meetingId');
+        return null;
+      }
+
+      // 获取会议的所有对话数据
+      final utterances = await IsarService.getAllUtterances(meetingId);
+      if (utterances.isEmpty) {
+        Log.log.warning('No utterances found for meeting $meetingId');
+        return null;
+      }
+
+      // 排序对话记录（按时间顺序）
+      utterances.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+      // 构建导出文本
+      final buffer = StringBuffer();
+      buffer.writeln('# ${meeting.title}');
+      if (meeting.objective != null && meeting.objective!.isNotEmpty) {
+        buffer.writeln('## ${meeting.objective}');
+      }
+      buffer.writeln('');
+
+      // 日期格式化
+      final dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+
+      // 添加所有对话
+      for (var utterance in utterances) {
+        final speakerName =
+            await IsarService.getUtteranceSpeakerName(utterance);
+        final timestamp = dateFormat
+            .format(DateTime.fromMillisecondsSinceEpoch(utterance.startTime));
+        buffer.writeln('[$speakerName] $timestamp');
+        buffer.writeln(utterance.text);
+        buffer.writeln('');
+      }
+
+      final text = buffer.toString();
+      return ExportResult(text: text, title: meeting.title);
+    } catch (e) {
+      Log.log.severe('Failed to export text: $e');
+      return null;
+    }
+  }
+
+  // 将文本保存到文件
+  Future<String?> saveTextToFile(String text, String title) async {
+    try {
+      // 创建文件
+      final appDir = await getApplicationDocumentsDirectory();
+      final formattedTitle = title.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final filePath =
+          '${appDir.path}/meeting_${formattedTitle}_$timestamp.txt';
+      final file = File(filePath);
+
+      // 写入文件
+      await file.writeAsBytes(utf8.encode(text));
+      Log.log.info('Text file saved: $filePath');
+
+      return filePath;
+    } catch (e) {
+      Log.log.severe('Failed to save text file: $e');
+      return null;
+    }
+  }
+
+  // 打开导出文件夹
+  Future<void> openExportFolder(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        Log.log.warning('File does not exist: $filePath');
+        return;
+      }
+
+      final fileUri = Uri.file(filePath);
+
+      // 尝试打开文件所在的文件夹
+      final directory = file.parent;
+      final directoryUri = Uri.directory(directory.path);
+
+      if (Platform.isIOS || Platform.isMacOS) {
+        // iOS/macOS使用reveal
+        if (await canLaunchUrl(Uri.parse('file://${directory.path}'))) {
+          await launchUrl(Uri.parse('file://${directory.path}'));
+        } else {
+          // 如果无法打开文件夹，尝试分享文件
+          await Share.shareXFiles([XFile(filePath)]);
+        }
+      } else if (Platform.isWindows) {
+        // Windows使用explorer
+        if (await canLaunchUrl(directoryUri)) {
+          await launchUrl(directoryUri);
+        } else {
+          // 备用方案：直接打开文件
+          await launchUrl(fileUri);
+        }
+      } else if (Platform.isAndroid) {
+        // Android直接分享文件
+        await Share.shareXFiles([XFile(filePath)]);
+      } else {
+        // 其他平台尝试直接打开文件
+        if (await canLaunchUrl(fileUri)) {
+          await launchUrl(fileUri);
+        } else {
+          Log.log.warning('Could not open file: $filePath');
+        }
+      }
+    } catch (e) {
+      Log.log.severe('Failed to open folder: $e');
+    }
+  }
+
+  // 打开基础导出文件夹
+  Future<void> openExportBaseFolder() async {
+    try {
+      Log.log.info('Opening base export folder');
+      final appDir = await getApplicationDocumentsDirectory();
+      final directoryUri = Uri.directory(appDir.path);
+
+      if (Platform.isIOS || Platform.isMacOS) {
+        // iOS/macOS使用reveal
+        if (await canLaunchUrl(Uri.parse('file://${appDir.path}'))) {
+          await launchUrl(Uri.parse('file://${appDir.path}'));
+        } else {
+          Log.log.warning('Could not open directory: ${appDir.path}');
+        }
+      } else if (Platform.isWindows) {
+        // Windows使用explorer
+        if (await canLaunchUrl(directoryUri)) {
+          await launchUrl(directoryUri);
+        } else {
+          Log.log.warning('Could not open directory: ${appDir.path}');
+        }
+      } else if (Platform.isAndroid) {
+        // Android can't directly open folders, show a message
+        Log.log.info('Direct folder access not supported on Android');
+      } else {
+        // 其他平台尝试直接打开文件夹
+        if (await canLaunchUrl(directoryUri)) {
+          await launchUrl(directoryUri);
+        } else {
+          Log.log.warning('Could not open directory: ${appDir.path}');
+        }
+      }
+    } catch (e) {
+      Log.log.severe('Failed to open base folder: $e');
+    }
+  }
+}
+
+// 导出结果类
+class ExportResult {
+  final String text;
+  final String title;
+
+  ExportResult({required this.text, required this.title});
 }

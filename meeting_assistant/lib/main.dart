@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:window_manager/window_manager.dart';
 import 'screens/main_screen.dart';
 import 'core/storage/services/isar_service.dart';
 import 'controllers/meeting_controller.dart';
@@ -9,10 +10,29 @@ import 'core/i18n/translations.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/analysis_controller.dart';
 import 'controllers/audio_player_controller.dart';
+import 'dart:io';
 
 void main() async {
   // 确保 Flutter 绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化窗口管理器（仅桌面平台）
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    await windowManager.ensureInitialized();
+
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(1200, 800),
+      center: true,
+      backgroundColor: Colors.transparent,
+      skipTaskbar: false,
+      titleBarStyle: TitleBarStyle.normal,
+    );
+
+    await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.maximize();
+    });
+  }
 
   // 初始化存储
   await GetStorage.init();
