@@ -37,7 +37,7 @@ class AIService {
       ];
 
       final response = await http.post(
-        Uri.parse('${SocketConfig.serverUrl}/analyze_dialog'),
+        Uri.parse('${SocketConfig.apiUrl}/analyze_dialog'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'messages': messages.map((m) => m.toJson()).toList(),

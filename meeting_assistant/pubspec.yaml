@@ -29,6 +29,9 @@ dependencies:
   url_launcher: ^6.3.1
   intl: ^0.20.2
   window_manager: ^0.4.3
+  file_picker: ^9.0.2
+  path: ^1.8.3
+  http_parser: ^4.0.2
 
 dev_dependencies:
   flutter_test:

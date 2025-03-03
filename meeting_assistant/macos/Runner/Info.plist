@@ -28,5 +28,13 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Need to access documents folder</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Need to access downloads folder</string>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>Need to access desktop folder</string>
+	<key>NSFileProviderDomainUsageDescription</key>
+	<string>Need to access file provider</string>
 </dict>
 </plist>

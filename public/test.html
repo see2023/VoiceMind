@@ -189,9 +189,6 @@
             }
         });
 
-        socket.on('analysis_result', (data) => {
-            addMessage('analysisMessages', `分析结果: ${JSON.stringify(data)}`, 'analysis');
-        });
 
         socket.on('error', (error) => {
             console.error('Socket error:', error);
@@ -322,16 +319,7 @@
                 return;
             }
             
-            socket.emit('analysis_request', {
-                type: type,
-                content: {
-                    text: content,
-                    context: {
-                        speakers: ['speaker1', 'speaker2'],
-                        topics: ['topic1', 'topic2']
-                    }
-                }
-            });
+			//TODO 发送分析请求
             
             addMessage('analysisMessages', `发送分析请求: ${type} - ${content}`);
         }

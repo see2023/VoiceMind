@@ -102,7 +102,7 @@ graph TD
      - funasr/campplus
 
    - 降噪和声音增强
-     - todo
+     - TODO
 
 2. 内容分析
 
@@ -120,7 +120,7 @@ graph TD
 
 4. 数据存储
    - Isar DB 本地存储（会议记录、用户设置、全文检索）
-   - Redis Stack 向量存储（语义搜索、RAG, todo）
+   - Chroma | Redis Stack 向量存储（语义搜索、RAG）
 
 ## 免责声明
 

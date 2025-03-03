@@ -14,6 +14,17 @@ class Messages extends Translations {
           'success': 'Success',
           'settings_saved': 'Settings saved',
           'settings_save_failed': 'Failed to save settings',
+          'refresh': 'Refresh',
+          'close': 'Close',
+          'delete': 'Delete',
+          'edit': 'Edit',
+          'preview': 'Preview',
+          'title': 'Title',
+          'description': 'Description',
+          'status': 'Status',
+          'untitled': 'Untitled',
+          'unknown': 'Unknown',
+          'confirm_delete': 'Confirm Delete',
 
           // 会议信息
           'meeting_info': 'Meeting Info',
@@ -42,6 +53,8 @@ class Messages extends Translations {
           'resources': 'Resources',
           'background_docs': 'Background Documents',
           'reference_materials': 'Reference Materials',
+          'documents': 'Documents',
+          'manage_documents_desc': 'Manage reference documents',
 
           // 设置
           'settings': 'Settings',
@@ -61,7 +74,6 @@ class Messages extends Translations {
           'conversation_text': 'Content',
           'notes': 'Notes',
           'notes_hint': 'Add notes here...',
-          'edit': 'Edit',
 
           // Stance Analysis
           'add_stance': 'Add Stance',
@@ -129,7 +141,6 @@ class Messages extends Translations {
 
           'new_meeting': 'New Meeting',
           'no_meetings': 'No meetings yet',
-          'close': 'Close',
 
           'server_address': 'Server Address',
 
@@ -163,6 +174,40 @@ class Messages extends Translations {
           'open_folder': 'Open Folder',
           'copied_to_clipboard': 'Copied to clipboard',
           'open_storage_dir': 'Open Storage Directory',
+
+          // 文档管理
+          'upload_document': 'Upload Document',
+          'document_preview': 'Document Preview',
+          'document_type': 'Document Type',
+          'visibility': 'Visibility',
+          'legal': 'Legal Document',
+          'article': 'Article',
+          'educational': 'Educational Material',
+          'other': 'Other',
+          'public': 'Public',
+          'private': 'Private',
+          'pending': 'Pending',
+          'processing': 'Processing',
+          'completed': 'Completed',
+          'failed': 'Failed',
+          'select_file': 'Select File',
+          'please_select_file': 'Please select a file',
+          'failed_to_pick_file': 'Failed to select file',
+          'failed_to_upload': 'Failed to upload document',
+          'error_uploading': 'Error occurred during upload',
+          'uploading': 'Uploading...',
+          'no_documents': 'No documents available',
+          'document_deleted': 'Document deleted successfully',
+          'failed_to_delete': 'Failed to delete document',
+          'document_updated': 'Document updated successfully',
+          'failed_to_update': 'Failed to update document',
+          'failed_to_load_preview': 'Failed to load document preview',
+          'delete_document_confirm':
+              'Are you sure you want to delete "{title}"?',
+          'no_structure_available': 'No document structure available',
+          'sample_chunks': 'Sample Content',
+          'edit_document': 'Edit Document',
+          'upload': 'Upload',
         },
         'zh_CN': {
           // 应用标题
@@ -175,6 +220,17 @@ class Messages extends Translations {
           'success': '成功',
           'settings_saved': '设置已保存',
           'settings_save_failed': '设置保存失败',
+          'refresh': '刷新',
+          'close': '关闭',
+          'delete': '删除',
+          'edit': '编辑',
+          'preview': '预览',
+          'title': '标题',
+          'description': '描述',
+          'status': '状态',
+          'untitled': '未命名',
+          'unknown': '未知',
+          'confirm_delete': '确认删除',
 
           // 会议信息
           'meeting_info': '会议信息',
@@ -203,6 +259,8 @@ class Messages extends Translations {
           'resources': '相关资料',
           'background_docs': '背景文档',
           'reference_materials': '参考资料',
+          'documents': '文档管理',
+          'manage_documents_desc': '管理参考文档资料',
 
           // 设置
           'settings': '设置',
@@ -222,7 +280,6 @@ class Messages extends Translations {
           'conversation_text': '内容',
           'notes': '备注',
           'notes_hint': '在此添加备注...',
-          'edit': '编辑',
 
           // 派别分析相关
           'add_stance': '添加派别',
@@ -290,7 +347,6 @@ class Messages extends Translations {
 
           'new_meeting': '新建会议',
           'no_meetings': '暂无会议',
-          'close': '关闭',
 
           'server_address': '服务器地址',
 
@@ -321,6 +377,39 @@ class Messages extends Translations {
           'open_folder': '打开文件夹',
           'copied_to_clipboard': '已复制到剪贴板',
           'open_storage_dir': '打开存储目录',
+
+          // 文档管理
+          'upload_document': '上传文档',
+          'document_preview': '文档预览',
+          'document_type': '文档类型',
+          'visibility': '可见性',
+          'legal': '法律文档',
+          'article': '文章',
+          'educational': '教育资料',
+          'other': '其他',
+          'public': '公开',
+          'private': '私有',
+          'pending': '等待处理',
+          'processing': '处理中',
+          'completed': '已完成',
+          'failed': '失败',
+          'select_file': '选择文件',
+          'please_select_file': '请选择文件',
+          'failed_to_pick_file': '选择文件失败',
+          'failed_to_upload': '上传文档失败',
+          'error_uploading': '上传过程中发生错误',
+          'uploading': '上传中...',
+          'no_documents': '暂无文档',
+          'document_deleted': '文档删除成功',
+          'failed_to_delete': '删除文档失败',
+          'document_updated': '文档更新成功',
+          'failed_to_update': '更新文档失败',
+          'failed_to_load_preview': '加载文档预览失败',
+          'delete_document_confirm': '确定要删除"{title}"吗？',
+          'no_structure_available': '暂无文档结构',
+          'sample_chunks': '示例内容',
+          'edit_document': '编辑文档',
+          'upload': '上传',
         },
       };
 }

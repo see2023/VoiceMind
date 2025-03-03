@@ -59,44 +59,6 @@
 }
 ```
 
-### 分析相关
-
-#### `analysis_request` (Client -> Server)
-
-请求分析特定内容
-
-```typescript
-{
-  type: "stance" | "summary" | "suggestion";  // 分析类型
-  content: {
-    text: string;       // 待分析文本
-    context?: {         // 上下文信息
-      speakers: string[];    // 相关发言人
-      background?: string;   // 背景信息
-      topics?: string[];     // 相关主题
-    }
-  }
-}
-```
-
-#### `analysis_result` (Server -> Client)
-
-返回分析结果
-
-```typescript
-{
-  type: "stance" | "summary" | "suggestion";  // 分析类型
-  result: {
-    content: string;    // 分析结果
-    metadata: {
-      confidence: number;    // 置信度
-      references?: string[]; // 引用来源
-      timestamp: number;     // 分析时间戳
-    }
-  }
-}
-```
-
 ### 系统状态
 
 #### `system_status` (Server -> Client)
@@ -149,11 +111,6 @@
    - 客户端持续发送 `audio_stream`
    - 服务端返回 `transcription`
    - 错误时发送 `error`
-
-3. **实时分析**
-   - 客户端发送 `analysis_request`
-   - 服务端处理后返回 `analysis_result`
-   - 服务端可主动推送新的分析结果
 
 ## 音频格式说明
 
@@ -217,3 +174,312 @@
 - 2001: 声纹提取错误
 - 2002: 说话人识别错误
 - 2003: 用户关联错误
+
+# HTTP API 文档
+
+## 基本配置
+
+- 基础 URL: `http://localhost:8000`
+- 内容类型: `application/json`、`multipart/form-data`(文件上传)
+- 认证方式: 无需认证(本地应用)
+
+## 会话管理 API
+
+### 切换会议
+
+```
+POST /api/switch_meeting
+```
+
+**请求参数:**
+
+```
+Content-Type: application/json
+
+{
+  "meeting_id": 整数
+}
+```
+
+**响应:**
+
+```json
+{
+  "success": true
+}
+```
+
+### 分析对话
+
+```
+POST /api/analyze_dialogue
+```
+
+**请求体:**
+
+```json
+{
+  "dialogue": "对话内容..."
+}
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "analysis": {
+    // 分析结果
+  }
+}
+```
+
+## 文档管理 API
+
+### 上传文档
+
+```
+POST /api/documents/upload
+```
+
+**请求参数:**
+
+```
+Content-Type: multipart/form-data
+
+file: 文件
+doc_type: "legal" | "educational" | "article" | "other"
+title: 文档标题 (可选)
+description: 文档描述 (可选)
+visibility: "public" | "private" (默认 "private")
+meeting_id: 整数 (私有文档必填)
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "doc_id": "string",
+  "file_info": {
+    "original_filename": "string",
+    "content_type": "string",
+    "file_path": "string",
+    "file_size": "number"
+  }
+}
+```
+
+### 获取文档处理状态
+
+```
+GET /api/documents/{doc_id}/status
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "status": "uploaded" | "processing" | "completed" | "error",
+  "progress": "number(0-100)",
+  "message": "状态描述"
+}
+```
+
+### 获取文档结构预览
+
+```
+GET /api/documents/{doc_id}/preview
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "doc_id": "string",
+  "title": "string",
+  "doc_type": "string",
+  "content_type": "string",
+  "structure": {
+    "hierarchy": [
+      {
+        "level": "number",
+        "title": "string",
+        "id": "string",
+        "children": "number"
+      }
+    ],
+    "total_chunks": "number",
+    "sample_chunks": [
+      {
+        "id": "string",
+        "text": "string",
+        "hierarchy_path": ["string"]
+      }
+    ]
+  }
+}
+```
+
+### 获取文档列表
+
+```
+GET /api/documents
+```
+
+**查询参数:**
+
+```
+meeting_id: 会议ID (可选，用于获取特定会议的文档)
+doc_type: 文档类型 (可选，多个用逗号分隔)
+visibility: "public" | "private" | "all" (可选，默认 "all")
+query: 搜索关键词 (可选)
+page: 页码 (默认 1)
+limit: 每页数量 (默认 20)
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "documents": [
+    {
+      "doc_id": "string",
+      "title": "string",
+      "doc_type": "string",
+      "content_type": "string",
+      "description": "string",
+      "visibility": "public" | "private",
+      "meeting_id": "number?",
+      "created_at": "number",
+      "updated_at": "number",
+      "status": "string",
+      "chunks_count": "number",
+      "file_size": "number",
+      "structure_summary": "string",
+      "file_path": "string"
+    }
+  ],
+  "total": "number",
+  "page": "number",
+  "limit": "number"
+}
+```
+
+### 更新文档信息
+
+```
+PATCH /api/documents/{doc_id}
+```
+
+**请求体:**
+
+```json
+{
+  "title": "string" (可选),
+  "description": "string" (可选),
+  "doc_type": "string" (可选),
+  "visibility": "public" | "private" (可选),
+  "meeting_id": "number" (visibility为private时必填)
+}
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "doc_info": {
+    // 更新后的文档信息
+  }
+}
+```
+
+### 删除文档
+
+```
+DELETE /api/documents/{doc_id}
+```
+
+**响应:**
+
+```json
+{
+  "success": true
+}
+```
+
+### 查询文档内容
+
+```
+POST /api/documents/query
+```
+
+**请求体:**
+
+```json
+{
+  "query": "string",
+  "meeting_id": "number" (可选，用于过滤私有文档),
+  "filter": {
+    "doc_ids": ["string"] (可选),
+    "doc_types": ["string"] (可选),
+    "visibility": "public" | "private" | "all" (可选，默认 "all")
+  },
+  "limit": "number" (可选，默认 5)
+}
+```
+
+**响应:**
+
+```json
+{
+  "success": true,
+  "results": [
+    {
+      "chunk_id": "string",
+      "text": "string",
+      "doc_id": "string",
+      "doc_title": "string",
+      "visibility": "public" | "private",
+      "score": "number(0-1)",
+      "hierarchy": [
+        {
+          "level": "number",
+          "title": "string",
+          "id": "string"
+        }
+      ],
+      "citation": "string"
+    }
+  ]
+}
+```
+
+## 错误响应
+
+所有 API 在出错时返回标准 HTTP 错误状态码，并提供详细信息：
+
+```json
+{
+  "success": false,
+  "error": "错误描述"
+}
+```
+
+## 常见错误码
+
+- 400: 请求参数错误
+- 404: 资源未找到
+- 429: 请求过于频繁
+- 500: 服务器内部错误
+
+### 文档相关错误码
+
+- 3001: 文档上传失败
+- 3002: 文档解析错误
+- 3003: 文档查询错误
+- 3004: 文档删除错误

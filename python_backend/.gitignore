@@ -1,2 +1,5 @@
 config.yaml
 .worker_id
+chroma_db
+uploads
+documents

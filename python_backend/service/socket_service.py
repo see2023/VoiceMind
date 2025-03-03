@@ -123,27 +123,6 @@ class SocketService:
                     self._stream_status = False
                 await self._send_error(sid, 1001, "Audio processing error")
 
-        @self.sio.on('analysis_request')
-        async def handle_analysis_request(sid, data: Dict[str, Any]):
-            try:
-                analysis_type = data.get('type')
-                logger.info(f"Received analysis request from {sid}, type: {analysis_type}")
-                
-                # TODO: 根据不同的分析类型处理请求
-                result = {
-                    'type': analysis_type,
-                    'result': {
-                        'content': 'Analysis result placeholder',
-                        'metadata': {
-                            'confidence': 0.95,
-                            'timestamp': int(datetime.now().timestamp() * 1000)
-                        }
-                    }
-                }
-                await self.sio.emit('analysis_result', result, room=sid)
-            except Exception as e:
-                logger.error(f"Error processing analysis request: {str(e)}")
-                await self._send_error(sid, 1003, "Analysis error")
 
     async def _send_system_status(self, sid: str):
         """发送系统状态"""

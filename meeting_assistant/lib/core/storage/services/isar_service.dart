@@ -9,6 +9,7 @@ import '../models/stance.dart';
 import '../models/proposition.dart';
 import '../models/proposition_stance.dart';
 import '../models/meeting_participant.dart';
+import '../models/document.dart';
 import '../../utils/logger.dart';
 
 class IsarService {
@@ -26,6 +27,7 @@ class IsarService {
         [
           MeetingSchema,
           AudioChunkSchema,
+          DocumentSchema,
           UtteranceSchema,
           UserSchema,
           SpeakerSchema,

@@ -6,7 +6,7 @@ class MeetingService {
   static Future<bool> switchMeeting(int meetingId) async {
     try {
       final response = await http.post(
-        Uri.parse('${SocketConfig.serverUrl}/switch_meeting'),
+        Uri.parse('${SocketConfig.apiUrl}/switch_meeting'),
         body: {'meeting_id': meetingId.toString()},
       );
 

@@ -7,6 +7,9 @@ class SocketConfig {
   // WebSocket URL
   static String get wsUrl => 'ws://$baseUrl/ws/socket.io';
 
+  // API URL
+  static String get apiUrl => 'http://$baseUrl/api';
+
   // Socket.IO 配置
   static Map<String, dynamic> get socketOptions => {
         'transports': ['websocket'],

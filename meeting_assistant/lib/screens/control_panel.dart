@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controllers/recording_controller.dart';
 import '../widgets/meeting_info_dialog.dart';
 import '../widgets/meeting_history_dialog.dart';
+import 'document_screen.dart';
 
 class ControlPanel extends GetView<RecordingController> {
   const ControlPanel({super.key});
@@ -154,17 +155,11 @@ class ControlPanel extends GetView<RecordingController> {
               child: ListView(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.folder),
-                    title: Text('background_docs'.tr),
-                    onTap: () {
-                      // TODO: 打开资料管理页面
-                    },
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.description),
-                    title: Text('reference_materials'.tr),
+                    title: Text('documents'.tr),
+                    subtitle: Text('manage_documents_desc'.tr),
                     onTap: () {
-                      // TODO: 打开参考资料页面
+                      Get.to(() => DocumentScreen());
                     },
                   ),
                 ],

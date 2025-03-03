@@ -22,3 +22,6 @@ python-dotenv>=1.0.0
 funasr
 funasr-onnx
 pyannote.audio
+
+# 向量数据库
+chromadb
