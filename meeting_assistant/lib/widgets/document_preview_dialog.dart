@@ -16,7 +16,7 @@ class DocumentPreviewDialog extends StatelessWidget {
     final title = document['title'] ?? 'untitled'.tr;
 
     return AlertDialog(
-      title: Text('document_preview'.tr),
+      title: Text('document_summary'.tr),
       content: SizedBox(
         width: double.maxFinite,
         height: MediaQuery.of(context).size.height * 0.7,
@@ -63,13 +63,14 @@ class DocumentPreviewDialog extends StatelessWidget {
 
   Widget _buildStructureTree(BuildContext context) {
     if (structure['structure'] == null ||
-        (structure['structure'] as List).isEmpty) {
+        structure['structure']['hierarchy'] == null ||
+        (structure['structure']['hierarchy'] as List).isEmpty) {
       return Center(
         child: Text('no_structure_available'.tr),
       );
     }
 
-    return _buildStructureList(structure['structure'] as List);
+    return _buildStructureList(structure['structure']['hierarchy'] as List);
   }
 
   Widget _buildStructureList(List structureList) {
@@ -86,8 +87,11 @@ class DocumentPreviewDialog extends StatelessWidget {
 
   Widget _buildStructureItem(dynamic item, int level) {
     final title = item['title'] ?? '';
-    final number = item['number']?.toString() ?? '';
-    final children = item['children'] as List?;
+
+    // 检查 children 的类型，不再假设它是一个列表
+    final childrenValue = item['children'];
+    final bool hasChildren =
+        childrenValue != null && childrenValue is int && childrenValue > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +110,7 @@ class DocumentPreviewDialog extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '$number $title',
+                  title, // 移除了 'number'，只使用 title
                   style: TextStyle(
                     fontSize: 16.0 - level.toDouble(),
                     fontWeight:
@@ -114,29 +118,33 @@ class DocumentPreviewDialog extends StatelessWidget {
                   ),
                 ),
               ),
+              // 可选：显示子项数量
+              if (hasChildren)
+                Text(
+                  '($childrenValue)',
+                  style: const TextStyle(
+                    fontSize: 12.0,
+                    color: Colors.grey,
+                  ),
+                ),
             ],
           ),
         ),
-        if (children != null && children.isNotEmpty)
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: children.length,
-            itemBuilder: (context, index) {
-              return _buildStructureItem(children[index], level + 1);
-            },
-          ),
+        // 由于 children 是整数，不是列表，我们现在不显示子项
+        // 您可能需要根据 id 或其他信息单独查询子项
       ],
     );
   }
 
   // 显示示例块
   Widget _buildSampleChunks(BuildContext context) {
-    if (structure['chunks'] == null || (structure['chunks'] as List).isEmpty) {
+    if (structure['structure'] == null ||
+        structure['structure']['sample_chunks'] == null ||
+        (structure['structure']['sample_chunks'] as List).isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final chunks = structure['chunks'] as List;
+    final chunks = structure['structure']['sample_chunks'] as List;
     final sampleChunks = chunks.take(3).toList();
 
     return Column(

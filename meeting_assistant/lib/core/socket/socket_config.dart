@@ -10,6 +10,10 @@ class SocketConfig {
   // API URL
   static String get apiUrl => 'http://$baseUrl/api';
 
+  // 文档查看URL
+  static String getDocumentViewUrl(String docId) =>
+      'http://$baseUrl/api/static/documents/$docId/view';
+
   // Socket.IO 配置
   static Map<String, dynamic> get socketOptions => {
         'transports': ['websocket'],

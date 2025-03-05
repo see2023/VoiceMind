@@ -178,6 +178,12 @@ class Messages extends Translations {
           // 文档管理
           'upload_document': 'Upload Document',
           'document_preview': 'Document Preview',
+          'document_summary': 'Document Summary',
+          'view_summary': 'View Summary',
+          'open_file_location': 'Open File Location',
+          'cannot_open_file_location': 'Cannot open file location',
+          'open_file_not_supported':
+              'Opening files is not supported on this platform',
           'document_type': 'Document Type',
           'visibility': 'Visibility',
           'legal': 'Legal Document',
@@ -208,6 +214,8 @@ class Messages extends Translations {
           'sample_chunks': 'Sample Content',
           'edit_document': 'Edit Document',
           'upload': 'Upload',
+          'view_document': 'View Document',
+          'cannot_open_file': 'Cannot open file in browser',
         },
         'zh_CN': {
           // 应用标题
@@ -381,6 +389,11 @@ class Messages extends Translations {
           // 文档管理
           'upload_document': '上传文档',
           'document_preview': '文档预览',
+          'document_summary': '文档摘要',
+          'view_summary': '查看摘要',
+          'open_file_location': '打开文件位置',
+          'cannot_open_file_location': '无法打开文件位置',
+          'open_file_not_supported': '此平台不支持打开文件',
           'document_type': '文档类型',
           'visibility': '可见性',
           'legal': '法律文档',
@@ -410,6 +423,8 @@ class Messages extends Translations {
           'sample_chunks': '示例内容',
           'edit_document': '编辑文档',
           'upload': '上传',
+          'view_document': '查看文档',
+          'cannot_open_file': '无法在浏览器中打开文件',
         },
       };
 }

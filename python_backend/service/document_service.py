@@ -206,6 +206,21 @@ class DocumentService:
             
             # 准备元数据
             metadatas = []
+            # Error processing document: Expected metadata value to be a str, int, float or bool, got None which is a NoneType in add.
+            # 检查元数据合法性， 避免出现以上错误
+            # 如果遇到异常值，设置为空
+            for chunk in batch:
+                if chunk["hierarchy"] is None:
+                    chunk["hierarchy"] = []
+            if doc_info["meeting_id"] is None:
+                doc_info["meeting_id"] = ""
+            if doc_info["visibility"] is None:
+                doc_info["visibility"] = ""
+            if doc_info["doc_type"] is None:
+                doc_info["doc_type"] = ""
+            if doc_info["title"] is None:
+                doc_info["title"] = ""
+
             for chunk in batch:
                 metadata = {
                     "doc_id": doc_id,
@@ -218,13 +233,16 @@ class DocumentService:
                 }
                 metadatas.append(metadata)
             
-            # 存入 Chroma
-            self.collection.add(
-                documents=texts,
+            try:
+                # 存入 Chroma
+                self.collection.add(
+                    documents=texts,
                 embeddings=embeddings,
                 metadatas=metadatas,
-                ids=ids
-            )
+                    ids=ids
+                )
+            except Exception as e:
+                logger.error(f"Error storing chunks in Chroma: {str(e)}")
             
             # 更新进度
             progress = 30 + int(70 * (i + len(batch)) / total_chunks)

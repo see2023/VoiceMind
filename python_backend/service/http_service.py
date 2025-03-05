@@ -134,25 +134,38 @@ class HttpService:
         
         if not doc_info:
             raise HTTPException(status_code=404, detail="Document not found")
-            
-        # TODO: 实现文档结构解析
-        structure = {
-            "hierarchy": [
-                {
-                    "level": 1,
-                    "title": "第一章",
-                    "id": "ch1",
-                    "children": 2
-                }
-            ],
-            "total_chunks": 10,
-            "sample_chunks": [
-                {
-                    "id": "chunk1",
-                    "text": "示例文本内容...",
-                    "hierarchy_path": ["第一章"]
-                }
-            ]
+        
+        # 直接使用文档中已有的结构数据
+        document_structure = doc_info.get("structure", [])
+        
+        # 获取文档的前几条内容作为示例
+        sample_chunks = []
+        try:
+            # 确定文档文件路径
+            file_path = doc_info["save_path"]
+            if os.path.exists(file_path):
+                # 对于文本文件，直接读取前几行作为示例
+                if doc_info["content_type"] == "application/plain" or file_path.lower().endswith(('.txt', '.md')):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        # 读取前1000个字符
+                        content = f.read(1000)
+                        lines = content.split('\n')
+                        
+                        # 取前3行作为示例
+                        for i, line in enumerate(lines[:3]):
+                            if line.strip():  # 跳过空行
+                                sample_chunks.append({
+                                    "id": f"sample_{i+1}",
+                                    "text": line,
+                                    "hierarchy_path": []
+                                })
+        except Exception as e:
+            logger.error(f"Error reading document content for preview: {str(e)}")
+        
+        # 构建响应结构
+        structure_data = {
+            "hierarchy": document_structure,
+            "sample_chunks": sample_chunks
         }
         
         return {
@@ -161,7 +174,7 @@ class HttpService:
             "title": doc_info["title"],
             "doc_type": doc_info["doc_type"],
             "content_type": doc_info["content_type"],
-            "structure": structure
+            "structure": structure_data  # 包含层级结构和示例块
         }
         
     async def list_documents(self, 

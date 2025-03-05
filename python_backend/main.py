@@ -9,6 +9,10 @@ from config.config_manager import config
 from service.socket_service import SocketService
 from service.ai_service import AIService
 from service.http_service import HttpService
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+from fastapi import HTTPException
 
 def setup_logging():
     """配置日志系统"""
@@ -71,6 +75,29 @@ app.mount("/ws", socket_service.get_app())
 
 # 注册 HTTP 路由
 http_service.register_routes(app)
+
+# 挂载上传目录为静态资源
+app.mount("/static/uploads", StaticFiles(directory="./data/uploads"), name="uploads")
+
+# 添加文档查看路由
+@app.get("/api/static/documents/{doc_id}/view")
+async def view_document(doc_id: str):
+    """在浏览器中查看文档"""
+    doc_info = await http_service.document_service.get_document(doc_id)
+    
+    if not doc_info:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = doc_info["save_path"]
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # 返回文件以便浏览器直接查看
+    return FileResponse(
+        path=file_path, 
+        # filename=doc_info["original_filename"],
+        media_type=doc_info["content_type"]
+    )
 
 @app.on_event("startup")
 async def startup_event():

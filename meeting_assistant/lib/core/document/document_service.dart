@@ -20,13 +20,17 @@ class DocumentService {
     try {
       final extension = path.extension(file.path).toLowerCase();
 
+      // 获取正确的MIME类型信息
+      final mimeTypeInfo = _getMimeTypeInfo(extension);
+
       // 构建multipart请求
       var request =
           http.MultipartRequest('POST', Uri.parse('$_baseUrl/upload'));
 
       // 添加文件
       request.files.add(await http.MultipartFile.fromPath('file', file.path,
-          contentType: MediaType('application', _getContentType(extension))));
+          contentType:
+              MediaType(mimeTypeInfo['type']!, mimeTypeInfo['subtype']!)));
 
       // 添加元数据
       request.fields['doc_type'] = docType ?? 'legal';
@@ -120,7 +124,7 @@ class DocumentService {
   // 获取文档结构
   Future<Map<String, dynamic>?> getDocumentStructure(String docId) async {
     try {
-      final uri = Uri.parse('$_baseUrl/$docId/structure');
+      final uri = Uri.parse('$_baseUrl/$docId/preview');
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -245,23 +249,27 @@ class DocumentService {
     }
   }
 
-  // 获取文件的MIME类型
-  String _getContentType(String extension) {
+  // 获取文件的MIME类型信息
+  Map<String, String> _getMimeTypeInfo(String extension) {
     switch (extension) {
       case '.pdf':
-        return 'pdf';
+        return {'type': 'application', 'subtype': 'pdf'};
       case '.txt':
-        return 'plain';
+        return {'type': 'text', 'subtype': 'plain'};
       case '.md':
-        return 'markdown';
+        return {'type': 'text', 'subtype': 'markdown'};
       case '.docx':
-        return 'vnd.openxmlformats-officedocument.wordprocessingml.document';
+        return {
+          'type': 'application',
+          'subtype':
+              'vnd.openxmlformats-officedocument.wordprocessingml.document'
+        };
       case '.doc':
-        return 'msword';
+        return {'type': 'application', 'subtype': 'msword'};
       case '.html':
-        return 'html';
+        return {'type': 'text', 'subtype': 'html'};
       default:
-        return 'octet-stream';
+        return {'type': 'application', 'subtype': 'octet-stream'};
     }
   }
 }

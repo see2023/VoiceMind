@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/utils/translation_helpers.dart';
+import '../core/socket/socket_config.dart';
 
 class DocumentItem extends StatelessWidget {
   final Map<String, dynamic> document;
@@ -17,6 +19,25 @@ class DocumentItem extends StatelessWidget {
     required this.onDelete,
     required this.onEdit,
   }) : super(key: key);
+
+  // 在浏览器中打开文件
+  void _openFileInBrowser() async {
+    final docId = document['doc_id'] as String;
+    final fileUrl = SocketConfig.getDocumentViewUrl(docId);
+
+    try {
+      // 使用浏览器打开文件
+      await launchUrl(Uri.parse(fileUrl),
+          mode: LaunchMode.externalApplication // 在外部浏览器中打开
+          );
+    } catch (e) {
+      Get.snackbar(
+        'error'.tr,
+        'cannot_open_file'.tr,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +82,7 @@ class DocumentItem extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: InkWell(
-        onTap: onTap,
+        onTap: onPreview,
         child: Column(
           children: [
             ListTile(
@@ -116,8 +137,11 @@ class DocumentItem extends StatelessWidget {
               trailing: PopupMenuButton<String>(
                 onSelected: (value) {
                   switch (value) {
-                    case 'preview':
+                    case 'summary':
                       onPreview();
+                      break;
+                    case 'view':
+                      _openFileInBrowser();
                       break;
                     case 'edit':
                       onEdit();
@@ -129,12 +153,22 @@ class DocumentItem extends StatelessWidget {
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem<String>(
-                    value: 'preview',
+                    value: 'summary',
                     child: Row(
                       children: [
-                        const Icon(Icons.preview, size: 20),
+                        const Icon(Icons.summarize, size: 20),
                         const SizedBox(width: 8),
-                        Text('preview'.tr),
+                        Text('view_summary'.tr),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'view',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.visibility, size: 20),
+                        const SizedBox(width: 8),
+                        Text('view_document'.tr),
                       ],
                     ),
                   ),
